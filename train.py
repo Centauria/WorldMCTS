@@ -403,7 +403,7 @@ def main(args):
 
 def mpi_fork(n):
   """Re-launches the current script with workers
-  Returns "parent" for original parent, "child" for MPI children
+  Returns "parent" for original parent, "child" for MPI _children
   (from https://github.com/garymcintire/mpi_util/)
   """
   if n<=1:
