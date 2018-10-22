@@ -33,7 +33,14 @@ class Node:
 
 	@property
 	def children(self):
-		return self._children.nodes
+		if self._children:
+			return self._children.nodes
+		else:
+			return None
+
+	@children.setter
+	def children(self, layer: 'Layer'):
+		self._children = layer
 
 
 class Layer:
@@ -47,7 +54,7 @@ class Layer:
 			self._nodes[i] = Node(parent)
 		self.parent = parent
 		if self.parent:
-			self.parent._children = self
+			self.parent.children = self
 			self.depth = self.parent.depth + 1
 		else:
 			self.depth = 0
@@ -81,10 +88,6 @@ class Layer:
 	def nodes(self):
 		return self._nodes
 
-	@property
-	def length(self):
-		return len(self._nodes)
-
 
 class Tree:
 	"""
@@ -99,18 +102,49 @@ class Tree:
 		return self._str_iter_dfs(node)
 
 	def print(self):
-		self._iter_dfs(self.root, lambda node: print(node), (self.root,))
+		def self_print(node):
+			print(node)
+			return []
 
-	def _iter_dfs(self, node: 'Node', func: 'function', arg: 'tuple'):
-		func(*arg)
-		if node._children:
-			self._iter_dfs(self.child(node), func, (self.child(node),))
+		self._iter_dfs(self.root, self_print)
+
+	def _iter_dfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
+		"""
+		DFS algorithm of the Tree.
+		Execute the function in all the Nodes under the given node.
+		:param node: the root node of the DFS
+		:param func: the function to be executed
+		The first argument of the function must be a Node
+		The return of the function must be the arg that will be used in the inner recursion of the iteration
+		:param arg: the arg of the function
+		:return: None
+		"""
+		arg = func(node, *arg)
+		if node.children:
+			self._iter_dfs(self.child(node), func, arg)
 		if self.sibling(node):
-			self._iter_dfs(self.sibling(node), func, (self.sibling(node),))
+			self._iter_dfs(self.sibling(node), func, arg)
+
+	def _iter_bfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
+		"""
+		BFS algorithm of the Tree.
+		Execute the function in all the Nodes under the given node.
+		:param node: the root node of the BFS
+		:param func: the function to be executed
+		The first argument of the function must be a Node
+		The return of the function must be the arg that will be used in the inner recursion of the iteration
+		:param arg: the arg of the function
+		:return: None
+		"""
+		arg = func(node, *arg)
+		if self.sibling(node):
+			self._iter_bfs(self.sibling(node), func, arg)
+		if node.children:
+			self._iter_bfs(self.child(node), func, arg)
 
 	def _str_iter_dfs(self, node: 'Node', string=''):
 		result = string + str(node)
-		if node._children:
+		if node.children:
 			result += self._str_iter_dfs(self.child(node), string)
 		if self.sibling(node):
 			result += self._str_iter_dfs(self.sibling(node), string)
@@ -120,7 +154,7 @@ class Tree:
 		return node.children[index]
 
 	def sibling(self, node: 'Node'):
-		if node.parent and node.index < node.parent._children.length - 1:
+		if node.parent and node.index < len(node.parent.children) - 1:
 			return node.parent.children[node.index + 1]
 		else:
 			return None
@@ -164,6 +198,13 @@ def test():
 	t = Tree()
 	t.root.add_child()
 	t.root.add_child()
+	t.root.children[1].add_child()
+	t.root.children[1].add_child()
+	t.root.children[1].add_child()
+	t.root.children[1].children[0].add_child()
+	t.root.children[1].children[0].add_child()
+	t.root.children[1].children[0].add_child()
+	t.root.children[1].children[0].add_child()
 	t.root.add_child()
 	t.root.children[2].add_child()
 	t.print()
