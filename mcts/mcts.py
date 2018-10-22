@@ -97,10 +97,6 @@ class Tree:
 	def __init__(self):
 		self.root = Node()
 
-	def __str__(self):
-		node = self.root
-		return self._str_iter_dfs(node)
-
 	def print(self):
 		def self_print(node):
 			print(node)
@@ -141,14 +137,6 @@ class Tree:
 			self._iter_bfs(self.sibling(node), func, arg)
 		if node.children:
 			self._iter_bfs(self.child(node), func, arg)
-
-	def _str_iter_dfs(self, node: 'Node', string=''):
-		result = string + str(node)
-		if node.children:
-			result += self._str_iter_dfs(self.child(node), string)
-		if self.sibling(node):
-			result += self._str_iter_dfs(self.sibling(node), string)
-		return result
 
 	def child(self, node: 'Node', index: 'int>=0' = 0):
 		return node.children[index]
