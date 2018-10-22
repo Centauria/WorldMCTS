@@ -21,8 +21,7 @@ class Node:
 		self._children = None
 
 	def __str__(self):
-		prepend = TREE_HEAD * self.depth
-		return prepend + '[%i, %.3f, %d]' % (self.index, self.reward, self.time)
+		return TREE_HEAD * self.depth + '[%i, %.3f, %d, %s]' % (self.index, self.reward, self.time, str(self.explored))
 
 	def add_child(self, child: 'Node' = None):
 		if not child:
@@ -30,6 +29,9 @@ class Node:
 		if not self._children:
 			self._children = Layer(0, self)
 		self._children.add_node(child)
+
+	def get_all_actions(self):
+		return None
 
 	@property
 	def children(self):
@@ -79,7 +81,6 @@ class Layer:
 		"""
 		if not node:
 			node = Node(self.parent)
-		node.parent = self.parent
 		node.index = len(self._nodes)
 		self._nodes.append(node)
 		return node
@@ -97,12 +98,12 @@ class Tree:
 	def __init__(self):
 		self.root = Node()
 
-	def print(self):
-		def self_print(node):
-			print(node)
-			return []
+	def __str__(self):
+		def self_str(node, string):
+			string += (str(node) + '\n')
+			return [string]
 
-		self._iter_dfs(self.root, self_print)
+		return self._iter_dfs(self.root, self_str, [''])[0]
 
 	def _iter_dfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
 		"""
@@ -113,13 +114,14 @@ class Tree:
 		The first argument of the function must be a Node
 		The return of the function must be the arg that will be used in the inner recursion of the iteration
 		:param arg: the arg of the function
-		:return: None
+		:return: the arg that changed after the iteration
 		"""
 		arg = func(node, *arg)
 		if node.children:
-			self._iter_dfs(self.child(node), func, arg)
+			arg = self._iter_dfs(self.child(node), func, arg)
 		if self.sibling(node):
-			self._iter_dfs(self.sibling(node), func, arg)
+			arg = self._iter_dfs(self.sibling(node), func, arg)
+		return arg
 
 	def _iter_bfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
 		"""
@@ -130,13 +132,14 @@ class Tree:
 		The first argument of the function must be a Node
 		The return of the function must be the arg that will be used in the inner recursion of the iteration
 		:param arg: the arg of the function
-		:return: None
+		:return: the arg that changed after the iteration
 		"""
 		arg = func(node, *arg)
 		if self.sibling(node):
-			self._iter_bfs(self.sibling(node), func, arg)
+			arg = self._iter_bfs(self.sibling(node), func, arg)
 		if node.children:
-			self._iter_bfs(self.child(node), func, arg)
+			arg = self._iter_bfs(self.child(node), func, arg)
+		return arg
 
 	def child(self, node: 'Node', index: 'int>=0' = 0):
 		return node.children[index]
@@ -159,6 +162,10 @@ class Tree:
 		self._iter_dfs(self.root, set_to_false, (self.root,))
 
 	def select(self):
+		def func(node):
+			children = node.children
+
+		self._iter_bfs(self.root, None)
 		pass
 
 	def expand(self):
@@ -195,7 +202,7 @@ def test():
 	t.root.children[1].children[0].add_child()
 	t.root.add_child()
 	t.root.children[2].add_child()
-	t.print()
+	print(t)
 	pass
 
 
