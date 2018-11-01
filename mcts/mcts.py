@@ -1,5 +1,8 @@
 # coding=utf-8
+from math import sqrt, log
+
 TREE_HEAD = '--'
+UCB_C = 1.0
 
 
 class Node:
@@ -32,6 +35,34 @@ class Node:
 
 	def get_all_actions(self):
 		return None
+
+	def child(self, index: 'int>=0' = 0):
+		"""
+		Get the child of self with the right index.
+		:param index: the index of the child, default=0
+		:return: the child node if exists, else None
+		"""
+		if index < len(self.children):
+			return self.children[index]
+		else:
+			return None
+
+	def sibling(self):
+		"""
+		Get the right neighbor of self.
+		:return: the neighbor node if exists, else None
+		"""
+		if self.parent and self.index < len(self.parent.children) - 1:
+			return self.parent.children[self.index + 1]
+		else:
+			return None
+
+	@property
+	def ucb(self):
+		u = self.reward / self.time
+		if self.parent:
+			u += UCB_C * sqrt(log(self.parent.time) / self.time)
+		return u
 
 	@property
 	def children(self):
@@ -141,15 +172,6 @@ class Tree:
 			arg = self._iter_bfs(self.child(node), func, arg)
 		return arg
 
-	def child(self, node: 'Node', index: 'int>=0' = 0):
-		return node.children[index]
-
-	def sibling(self, node: 'Node'):
-		if node.parent and node.index < len(node.parent.children) - 1:
-			return node.parent.children[node.index + 1]
-		else:
-			return None
-
 	def reset(self):
 		"""
 		Set the variable 'explored' of all Node in the Tree to False.
@@ -159,13 +181,12 @@ class Tree:
 		def set_to_false(node):
 			node.explored = False
 
-		self._iter_dfs(self.root, set_to_false, (self.root,))
+		self._iter_dfs(self.root, set_to_false, [self.root])
 
 	def select(self):
 		def func(node):
-			children = node.children
+			pass
 
-		self._iter_bfs(self.root, None)
 		pass
 
 	def expand(self):
