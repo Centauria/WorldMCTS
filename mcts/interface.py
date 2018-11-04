@@ -14,4 +14,4 @@ def random_linear_sample(min_value: 'float' = 0, max_value: 'float' = 1, n: 'int
 
 
 if __name__ == '__main__':
-	print(random_linear_sample(4, 5, 10))
+	pass
