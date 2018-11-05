@@ -44,12 +44,12 @@ class ModelMCTS(Model):
 		self.mct = mcts.Tree()
 
 	def get_action(self, z):
-		actions = np.array([0, 0, 0])
-		pass
+		a = random_linear_sample(-1, 1)
+		b = random_linear_sample(0, 1)
+		c = random_linear_sample(0, 1)
+		actions = dp(a, b, c)
+		self.mct.actions = actions
 
 
 if __name__ == '__main__':
-	a = random_linear_sample(-1, 1)
-	b = random_linear_sample(0, 1)
-	c = random_linear_sample(0, 1)
-	print(np.array(dp(a, b, c)).shape)
+	pass

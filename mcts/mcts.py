@@ -128,6 +128,7 @@ class Tree:
 
 	def __init__(self):
 		self.root = Node()
+		self.actions = None
 
 	def __str__(self):
 		def self_str(node, string):
