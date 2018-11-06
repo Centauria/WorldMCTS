@@ -1,6 +1,7 @@
 # coding=utf-8
 from math import sqrt, log
 import copy
+import random
 
 TREE_HEAD = '--'
 UCB_C = 1.0
@@ -36,9 +37,6 @@ class Node:
 		self._children.add_node(child)
 		return child
 
-	def get_all_actions(self):
-		return None
-
 	def child(self, index: 'int>=0' = 0):
 		"""
 		Get the child of self with the right index.
@@ -59,6 +57,15 @@ class Node:
 			return self.parent.children[self.index + 1]
 		else:
 			return None
+
+	def bp(self, reward):
+		self.reward += reward
+		self.time += 1
+		node = self
+		while node.parent:
+			node = node.parent
+			node.reward += reward
+			node.time += 1
 
 	@property
 	def ucb(self):
@@ -223,12 +230,24 @@ class Tree:
 		candidates = self._iter_bfs(self.root, is_full_developed, [None, ])
 		return candidates[0]
 
+	def expand(self, node: 'Node'):
+		new_node = node.add_child()
+		env = copy.deepcopy(node.env_state)
+		new_node.state, reward, done, info = env.step(self.actions[new_node.index])
+		new_node.env_state = env
+
 	def simulate(self, node: 'Node'):
-
-		pass
-
-	def bp(self):
-		pass
+		sim_node = Node()
+		sim_node.env_state = node.env_state
+		accumulate_reward = 0
+		for i in range(self.simulate_depth):
+			env = copy.deepcopy(sim_node.env_state)
+			sim_node.state, reward, done, info = env.step(random.choice(self.actions))
+			sim_node.env_state = env
+			accumulate_reward += reward
+			if done:
+				break
+		node.bp(accumulate_reward)
 
 
 def mcts(state, env_state, actions, reward_function, tree_depth=5):
