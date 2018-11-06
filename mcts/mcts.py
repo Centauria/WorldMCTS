@@ -277,6 +277,8 @@ def test():
 		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=25))
 		recording_obs.append(obs)
 		recording_reward.append(reward)
+	print(recording_obs)
+	print(recording_reward)
 
 
 if __name__ == '__main__':
