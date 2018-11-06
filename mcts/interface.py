@@ -1,5 +1,6 @@
 # coding=utf-8
-from model import Model
+from model import Model, EXP_MODE
+from rnn.rnn import rnn_output
 import mcts
 import numpy as np
 
@@ -49,6 +50,12 @@ class ModelMCTS(Model):
 		c = random_linear_sample(0, 1)
 		actions = dp(a, b, c)
 		self.mct.actions = actions
+
+		h = rnn_output(self.state, z, EXP_MODE)
+
+
+def simulate(mct: 'mcts.Tree'):
+	pass
 
 
 if __name__ == '__main__':

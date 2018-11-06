@@ -1,5 +1,6 @@
 # coding=utf-8
 from math import sqrt, log
+import copy
 
 TREE_HEAD = '--'
 UCB_C = 1.0
@@ -18,10 +19,11 @@ class Node:
 			self.depth = depth
 		self.index = 0
 		self.state = None
+		self.env_state = None
 		self.explored = False
 		self.reward = 0
 		self.time = 0
-		self._children = None
+		self._children = Layer(0, self)
 
 	def __str__(self):
 		return TREE_HEAD * self.depth + '[%i, %.3f, %d, %s]' % (self.index, self.reward, self.time, str(self.explored))
@@ -32,6 +34,7 @@ class Node:
 		if not self._children:
 			self._children = Layer(0, self)
 		self._children.add_node(child)
+		return child
 
 	def get_all_actions(self):
 		return None
@@ -126,9 +129,12 @@ class Tree:
 	The Monte Carlo Tree model
 	"""
 
-	def __init__(self):
+	def __init__(self, actions: 'iter', reward_function=None):
 		self.root = Node()
-		self.actions = None
+		self.actions = actions
+		self.reward_function = reward_function
+		self.simulate_depth = 50
+		self.action_history = []
 
 	def __str__(self):
 		def self_str(node, string):
@@ -136,6 +142,24 @@ class Tree:
 			return [string]
 
 		return self._iter_dfs(self.root, self_str, [''])[0]
+
+	@property
+	def actions(self):
+		return self._actions
+
+	@actions.setter
+	def actions(self, actions: 'iter'):
+		for action in actions:
+			self._actions.append(action)
+
+	@property
+	def depth(self):
+		def max_depth(node, max_d=0):
+			if node.depth > max_d:
+				max_d = node.depth
+			return [max_d]
+
+		return self._iter_dfs(self.root, max_depth, [0])[0]
 
 	def _iter_dfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
 		"""
@@ -150,9 +174,9 @@ class Tree:
 		"""
 		arg = func(node, *arg)
 		if node.children:
-			arg = self._iter_dfs(self.child(node), func, arg)
-		if self.sibling(node):
-			arg = self._iter_dfs(self.sibling(node), func, arg)
+			arg = self._iter_dfs(node.child(), func, arg)
+		if node.sibling():
+			arg = self._iter_dfs(node.sibling(), func, arg)
 		return arg
 
 	def _iter_bfs(self, node: 'Node', func: 'function', arg: 'iter' = []):
@@ -167,10 +191,10 @@ class Tree:
 		:return: the arg that changed after the iteration
 		"""
 		arg = func(node, *arg)
-		if self.sibling(node):
-			arg = self._iter_bfs(self.sibling(node), func, arg)
+		if node.sibling():
+			arg = self._iter_bfs(node.sibling(), func, arg)
 		if node.children:
-			arg = self._iter_bfs(self.child(node), func, arg)
+			arg = self._iter_bfs(node.child(), func, arg)
 		return arg
 
 	def reset(self):
@@ -185,26 +209,41 @@ class Tree:
 		self._iter_dfs(self.root, set_to_false, [self.root])
 
 	def select(self):
-		def func(node):
-			pass
+		def is_full_developed(node, candidate=None):
+			if candidate:
+				return [candidate]
+			else:
+				if node.children and len(node.children) < len(self.actions):
+					return [node]
+				elif not node.children:
+					return [node]
+				else:
+					return [None]
 
-		pass
+		candidates = self._iter_bfs(self.root, is_full_developed, [None, ])
+		return candidates[0]
 
-	def expand(self):
-		pass
+	def simulate(self, node: 'Node'):
 
-	def simulate(self):
 		pass
 
 	def bp(self):
 		pass
 
 
-def mcts():
+def mcts(state, env_state, actions, reward_function, tree_depth=5):
 	"""
 	MCTS algorithm
-	:return: None
+	:param state: root state
+	:param env_state: root environment state
+	:param actions: a set of actions
+	:param reward_function: get reward from state and action
+	:param tree_depth: the max depth of the MCT
+	:return: best action
 	"""
+	mct = Tree(actions, reward_function)
+	mct.root.state = state
+	mct.root.env_state = copy.deepcopy(env_state)
 
 
 def test():
@@ -213,18 +252,18 @@ def test():
 	:return: None
 	"""
 	t = Tree()
+	t.actions = [1, 2, 3]
 	t.root.add_child()
 	t.root.add_child()
 	t.root.children[1].add_child()
 	t.root.children[1].add_child()
 	t.root.children[1].add_child()
-	t.root.children[1].children[0].add_child()
-	t.root.children[1].children[0].add_child()
 	t.root.children[1].children[0].add_child()
 	t.root.children[1].children[0].add_child()
 	t.root.add_child()
 	t.root.children[2].add_child()
-	print(t)
+	print(t.select())
+	print(t.depth)
 	pass
 
 
