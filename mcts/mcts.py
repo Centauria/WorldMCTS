@@ -137,10 +137,9 @@ class Tree:
 	The Monte Carlo Tree model
 	"""
 
-	def __init__(self, actions: 'iter', reward_function=None):
+	def __init__(self, actions: 'iter'):
 		self.root = Node()
 		self.actions = actions
-		self.reward_function = reward_function
 		self.simulate_depth = 50
 		self.action_history = []
 
@@ -257,17 +256,16 @@ class Tree:
 		node.bp(accumulate_reward)
 
 
-def mcts(state, env_state, actions, reward_function, tree_depth=5):
+def mcts(state, env_state, actions, tree_depth=5):
 	"""
 	MCTS algorithm
 	:param state: root state
 	:param env_state: root environment state
 	:param actions: a set of actions
-	:param reward_function: get reward from state and action
 	:param tree_depth: the max depth of the MCT
 	:return: best action
 	"""
-	mct = Tree(actions, reward_function)
+	mct = Tree(actions)
 	mct.root.state = state
 	mct.root.env_state = copy.deepcopy(env_state)
 	while mct.depth <= tree_depth:
