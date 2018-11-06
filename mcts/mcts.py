@@ -2,7 +2,8 @@
 from math import sqrt, log
 import copy
 import random
-import numpy as np
+import gym
+from colorama import Back, Fore
 
 TREE_HEAD = '--'
 UCB_C = 1.0
@@ -22,13 +23,12 @@ class Node:
 		self.index = 0
 		self.state = None
 		self.env_state = None
-		self.explored = False
 		self.reward = 0
 		self.time = 0
 		self._children = Layer(0, self)
 
 	def __str__(self):
-		return TREE_HEAD * self.depth + '[%i, %.3f, %d, %s]' % (self.index, self.reward, self.time, str(self.explored))
+		return TREE_HEAD * self.depth + '[%i, %.3f, %d, %.3f]' % (self.index, self.reward, self.time, self.ucb)
 
 	def add_child(self, child: 'Node' = None):
 		if not child:
@@ -137,10 +137,10 @@ class Tree:
 	The Monte Carlo Tree model
 	"""
 
-	def __init__(self, actions: 'iter'):
+	def __init__(self, actions: 'iter', simulate_depth: 'int>0' = 10):
 		self.root = Node()
-		self.actions = actions
-		self.simulate_depth = 50
+		self._actions = actions
+		self.simulate_depth = simulate_depth
 		self.action_history = []
 
 	def __str__(self):
@@ -204,28 +204,22 @@ class Tree:
 			arg = self._iter_bfs(node.child(), func, arg)
 		return arg
 
-	def reset(self):
-		"""
-		Set the variable 'explored' of all Node in the Tree to False.
-		:return: None
-		"""
-
-		def set_to_false(node):
-			node.explored = False
-
-		self._iter_dfs(self.root, set_to_false, [self.root])
-
 	def select(self):
 		def is_full_developed(node: 'Node', candidate=None):
 			if candidate:
 				return [candidate]
 			else:
-				if node.children and len(node.children) < len(self.actions):
-					return [node]
-				elif not node.children:
-					return [max(node.parent.children, key=lambda child: child.ucb)]
+				if node.parent and len(node.parent.children) == len(self.actions):
+					max_node = max(node.parent.children, key=lambda child: child.ucb)
+					if max_node.children and len(max_node.children) == len(self.actions):
+						return [None]
+					else:
+						return [max_node]
 				else:
-					return [None]
+					if node.children and len(node.children) == len(self.actions):
+						return [None]
+					else:
+						return [node]
 
 		candidates = self._iter_bfs(self.root, is_full_developed, [None, ])
 		return candidates[0]
@@ -235,6 +229,7 @@ class Tree:
 		env = copy.deepcopy(node.env_state)
 		new_node.state, reward, done, info = env.step(self.actions[new_node.index])
 		new_node.env_state = env
+		return new_node
 
 	def simulate(self, node: 'Node'):
 		sim_node = Node()
@@ -249,8 +244,18 @@ class Tree:
 				break
 		node.bp(accumulate_reward)
 
+	def print(self, max_depth=None):
+		def print_node(node, _max_depth):
+			if node.depth == 0:
+				print(Back.GREEN + Fore.BLACK + str(node) + Fore.RESET + Back.RESET, 'Depth:', self.depth)
+			elif node.depth < _max_depth:
+				print(node)
+			return [max_depth]
 
-def mcts(state, env_state, actions, tree_depth=5):
+		self._iter_dfs(self.root, print_node, [max_depth])
+
+
+def mcts(state, env_state, actions, tree_depth=10):
 	"""
 	MCTS algorithm
 	:param state: root state
@@ -259,15 +264,15 @@ def mcts(state, env_state, actions, tree_depth=5):
 	:param tree_depth: the max depth of the MCT
 	:return: best action
 	"""
-	mct = Tree(actions)
+	mct = Tree(actions, simulate_depth=30)
 	mct.root.state = state
 	mct.root.env_state = copy.deepcopy(env_state)
 	while mct.depth <= tree_depth:
-		node = mct.select()
-		mct.expand(node)
+		node = mct.expand(mct.select())
 		mct.simulate(node)
+	# mct.print(max_depth=2)
 	result = max(mct.root.children, key=lambda child: child.ucb)
-	return result
+	return mct.actions[result.index]
 
 
 def test():
@@ -275,20 +280,12 @@ def test():
 	test program
 	:return: None
 	"""
-	t = Tree()
-	t.actions = [1, 2, 3]
-	t.root.add_child()
-	t.root.add_child()
-	t.root.children[1].add_child()
-	t.root.children[1].add_child()
-	t.root.children[1].add_child()
-	t.root.children[1].children[0].add_child()
-	t.root.children[1].children[0].add_child()
-	t.root.add_child()
-	t.root.children[2].add_child()
-	print(t.select())
-	print(t.depth)
-	pass
+	env = gym.make('Taxi-v2')
+	obs = env.reset()
+	done = False
+	while not done:
+		env.render()
+		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5))
 
 
 if __name__ == '__main__':
