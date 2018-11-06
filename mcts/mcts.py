@@ -269,10 +269,14 @@ def test():
 	obs = env.reset()
 	done = False
 	reward = 0
+	recording_obs = []
+	recording_reward = []
 	while not done:
 		env.render()
 		print('Reward:', reward)
 		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=25))
+		recording_obs.append(obs)
+		recording_reward.append(reward)
 
 
 if __name__ == '__main__':
