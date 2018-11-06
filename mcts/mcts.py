@@ -2,6 +2,7 @@
 from math import sqrt, log
 import copy
 import random
+import numpy as np
 
 TREE_HEAD = '--'
 UCB_C = 1.0
@@ -216,14 +217,20 @@ class Tree:
 		self._iter_dfs(self.root, set_to_false, [self.root])
 
 	def select(self):
-		def is_full_developed(node, candidate=None):
+		def is_full_developed(node: 'Node', candidate=None):
 			if candidate:
 				return [candidate]
 			else:
 				if node.children and len(node.children) < len(self.actions):
 					return [node]
 				elif not node.children:
-					return [node]
+					max_ucb = -np.infty
+					max_child = node
+					for child in node.parent.children:
+						if child.ucb > max_ucb:
+							max_ucb = child.ucb
+							max_child = child
+					return [max_child]
 				else:
 					return [None]
 
@@ -263,6 +270,10 @@ def mcts(state, env_state, actions, reward_function, tree_depth=5):
 	mct = Tree(actions, reward_function)
 	mct.root.state = state
 	mct.root.env_state = copy.deepcopy(env_state)
+	while mct.depth <= tree_depth:
+		node = mct.select()
+		mct.expand(node)
+		mct.simulate(node)
 
 
 def test():
