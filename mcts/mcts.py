@@ -6,7 +6,7 @@ import gym
 from colorama import Back, Fore
 
 TREE_HEAD = '--'
-UCB_C = 1.0
+UCB_C = 2.0
 
 
 class Node:
@@ -233,12 +233,10 @@ class Tree:
 
 	def simulate(self, node: 'Node'):
 		sim_node = Node()
-		sim_node.env_state = node.env_state
+		sim_node.env_state = copy.deepcopy(node.env_state)
 		accumulate_reward = 0
 		for i in range(self.simulate_depth):
-			env = copy.deepcopy(sim_node.env_state)
-			sim_node.state, reward, done, info = env.step(random.choice(self.actions))
-			sim_node.env_state = env
+			sim_node.state, reward, done, info = sim_node.env_state.step(random.choice(self.actions))
 			accumulate_reward += reward
 			if done:
 				break
@@ -255,22 +253,23 @@ class Tree:
 		self._iter_dfs(self.root, print_node, [max_depth])
 
 
-def mcts(state, env_state, actions, tree_depth=10):
+def mcts(state, env_state, actions, tree_depth=10, simulate_depth=30):
 	"""
 	MCTS algorithm
 	:param state: root state
 	:param env_state: root environment state
 	:param actions: a set of actions
 	:param tree_depth: the max depth of the MCT
+	:param simulate_depth: the depth of simulation
 	:return: best action
 	"""
-	mct = Tree(actions, simulate_depth=30)
+	mct = Tree(actions, simulate_depth=simulate_depth)
 	mct.root.state = state
 	mct.root.env_state = copy.deepcopy(env_state)
 	while mct.depth <= tree_depth:
 		node = mct.expand(mct.select())
 		mct.simulate(node)
-	# mct.print(max_depth=2)
+	mct.print(max_depth=2)
 	result = max(mct.root.children, key=lambda child: child.ucb)
 	return mct.actions[result.index]
 
@@ -285,7 +284,7 @@ def test():
 	done = False
 	while not done:
 		env.render()
-		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5))
+		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=50))
 
 
 if __name__ == '__main__':
