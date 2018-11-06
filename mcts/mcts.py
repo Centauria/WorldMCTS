@@ -223,13 +223,7 @@ class Tree:
 				if node.children and len(node.children) < len(self.actions):
 					return [node]
 				elif not node.children:
-					max_ucb = -np.infty
-					max_child = node
-					for child in node.parent.children:
-						if child.ucb > max_ucb:
-							max_ucb = child.ucb
-							max_child = child
-					return [max_child]
+					return [max(node.parent.children, key=lambda child: child.ucb)]
 				else:
 					return [None]
 
@@ -272,6 +266,8 @@ def mcts(state, env_state, actions, tree_depth=5):
 		node = mct.select()
 		mct.expand(node)
 		mct.simulate(node)
+	result = max(mct.root.children, key=lambda child: child.ucb)
+	return result
 
 
 def test():
