@@ -6,7 +6,7 @@ import gym
 from colorama import Back, Fore
 
 TREE_HEAD = '--'
-UCB_C = 2.0
+UCB_C = 12.0
 
 
 class Node:
@@ -205,24 +205,10 @@ class Tree:
 		return arg
 
 	def select(self):
-		def is_full_developed(node: 'Node', candidate=None):
-			if candidate:
-				return [candidate]
-			else:
-				if node.parent and len(node.parent.children) == len(self.actions):
-					max_node = max(node.parent.children, key=lambda child: child.ucb)
-					if max_node.children and len(max_node.children) == len(self.actions):
-						return [None]
-					else:
-						return [max_node]
-				else:
-					if node.children and len(node.children) == len(self.actions):
-						return [None]
-					else:
-						return [node]
-
-		candidates = self._iter_bfs(self.root, is_full_developed, [None, ])
-		return candidates[0]
+		node = self.root
+		while node.children and len(node.children) == len(self.actions):
+			node = max(node.children, key=lambda child: child.ucb)
+		return node
 
 	def expand(self, node: 'Node'):
 		new_node = node.add_child()
@@ -282,9 +268,11 @@ def test():
 	env = gym.make('Taxi-v2')
 	obs = env.reset()
 	done = False
+	reward = 0
 	while not done:
 		env.render()
-		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=50))
+		print('Reward:', reward)
+		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=25))
 
 
 if __name__ == '__main__':
