@@ -293,7 +293,11 @@ def test():
 	while not done:
 		env.render()
 		print('Reward:', reward)
-		action, tree = mcts(obs, env, range(env.action_space.n), old_tree=tree, tree_depth=5, simulate_depth=25)
+		action, tree = mcts(obs, env, range(env.action_space.n),
+							old_tree=tree,
+							tree_depth=7,
+							simulate_depth=40,
+							simulate_frequency=3)
 		obs, reward, done, info = env.step(action)
 		recording_obs.append(obs)
 		recording_reward.append(reward)
