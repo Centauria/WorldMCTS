@@ -6,7 +6,7 @@ import gym
 from colorama import Back, Fore
 
 TREE_HEAD = '--'
-UCB_C = 12.0
+UCB_C = 5.0
 
 
 class Node:
@@ -141,7 +141,6 @@ class Tree:
 		self.root = Node()
 		self._actions = actions
 		self.simulate_depth = simulate_depth
-		self.action_history = []
 
 	def __str__(self):
 		def self_str(node, string):
@@ -156,8 +155,7 @@ class Tree:
 
 	@actions.setter
 	def actions(self, actions: 'iter'):
-		for action in actions:
-			self._actions.append(action)
+		self._actions = actions
 
 	@property
 	def depth(self):
@@ -204,6 +202,17 @@ class Tree:
 			arg = self._iter_bfs(node.child(), func, arg)
 		return arg
 
+	def set_root(self, node: 'Node'):
+		self.root = node
+		self.root.parent = None
+		depth_correction = node.depth
+
+		def set_depth(_node):
+			_node.depth -= depth_correction
+			return []
+
+		self._iter_dfs(self.root, set_depth, [])
+
 	def select(self):
 		node = self.root
 		while node.children and len(node.children) == len(self.actions):
@@ -239,25 +248,34 @@ class Tree:
 		self._iter_dfs(self.root, print_node, [max_depth])
 
 
-def mcts(state, env_state, actions, tree_depth=10, simulate_depth=30):
+def mcts(state, env_state, actions, old_tree=None, tree_depth=10, simulate_depth=30, simulate_frequency=5):
 	"""
 	MCTS algorithm
 	:param state: root state
 	:param env_state: root environment state
 	:param actions: a set of actions
+	:param old_tree: the tree used by a past scene
 	:param tree_depth: the max depth of the MCT
 	:param simulate_depth: the depth of simulation
+	:param simulate_frequency: the number of simulations during one expanded node
 	:return: best action
 	"""
-	mct = Tree(actions, simulate_depth=simulate_depth)
+	if old_tree:
+		mct = old_tree
+		old_tree.actions = actions
+		old_tree.simulate_depth = simulate_depth
+	else:
+		mct = Tree(actions, simulate_depth=simulate_depth)
 	mct.root.state = state
 	mct.root.env_state = copy.deepcopy(env_state)
 	while mct.depth <= tree_depth:
 		node = mct.expand(mct.select())
-		mct.simulate(node)
+		for i in range(simulate_frequency):
+			mct.simulate(node)
 	mct.print(max_depth=2)
 	result = max(mct.root.children, key=lambda child: child.ucb)
-	return mct.actions[result.index]
+	mct.set_root(result)
+	return mct.actions[result.index], mct
 
 
 def test():
@@ -268,13 +286,15 @@ def test():
 	env = gym.make('Taxi-v2')
 	obs = env.reset()
 	done = False
+	tree = None
 	reward = 0
 	recording_obs = []
 	recording_reward = []
 	while not done:
 		env.render()
 		print('Reward:', reward)
-		obs, reward, done, info = env.step(mcts(obs, env, range(env.action_space.n), tree_depth=5, simulate_depth=25))
+		action, tree = mcts(obs, env, range(env.action_space.n), old_tree=tree, tree_depth=5, simulate_depth=25)
+		obs, reward, done, info = env.step(action)
 		recording_obs.append(obs)
 		recording_reward.append(reward)
 	print(recording_obs)
