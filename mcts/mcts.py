@@ -4,6 +4,7 @@ import copy
 import random
 import gym
 from colorama import Back, Fore
+import time
 
 TREE_HEAD = '--'
 UCB_C = 5.0
@@ -260,6 +261,7 @@ def mcts(state, env_state, actions, old_tree=None, tree_depth=10, simulate_depth
 	:param simulate_frequency: the number of simulations during one expanded node
 	:return: best action
 	"""
+	time_start = time.time()
 	if old_tree:
 		mct = old_tree
 		old_tree.actions = actions
@@ -275,7 +277,8 @@ def mcts(state, env_state, actions, old_tree=None, tree_depth=10, simulate_depth
 	mct.print(max_depth=2)
 	result = max(mct.root.children, key=lambda child: child.ucb)
 	mct.set_root(result)
-	return mct.actions[result.index], mct
+	time_end = time.time()
+	return mct.actions[result.index], mct, time_end - time_start
 
 
 def test():
@@ -290,17 +293,22 @@ def test():
 	reward = 0
 	recording_obs = []
 	recording_reward = []
+	recording_time = []
+	env.render()
+	print('Reward:', reward)
 	while not done:
-		env.render()
-		print('Reward:', reward)
-		action, tree = mcts(obs, env, range(env.action_space.n),
-							old_tree=tree,
-							tree_depth=7,
-							simulate_depth=40,
-							simulate_frequency=3)
+		action, tree, elapsed_time = mcts(obs, env, range(env.action_space.n),
+										  old_tree=tree,
+										  tree_depth=6,
+										  simulate_depth=200,
+										  simulate_frequency=20)
 		obs, reward, done, info = env.step(action)
 		recording_obs.append(obs)
 		recording_reward.append(reward)
+		recording_time.append(elapsed_time)
+		print('average time:', sum(recording_time) / len(recording_time))
+		env.render()
+		print('Reward:', reward)
 	print(recording_obs)
 	print(recording_reward)
 
