@@ -142,12 +142,12 @@ class MDNRNN():
 
 		def get_lossfunc(logmix, mean, logstd, y):
 			v = logmix + tf_lognormal(y, mean, logstd)
-			v = tf.reduce_logsumexp(v, 1, keepdims=True)
+			v = tf.reduce_logsumexp(v, 1, keep_dims=True)
 			return -tf.reduce_mean(v)
 
 		def get_mdn_coef(output):
 			logmix, mean, logstd = tf.split(output, 3, 1)
-			logmix = logmix - tf.reduce_logsumexp(logmix, 1, keepdims=True)
+			logmix = logmix - tf.reduce_logsumexp(logmix, 1, keep_dims=True)
 			return logmix, mean, logstd
 
 		out_logmix, out_mean, out_logstd = get_mdn_coef(output)
