@@ -1,7 +1,7 @@
 # coding=utf-8
 from model import Model, EXP_MODE
-from rnn.rnn import rnn_output
-import mcts
+from rnn.rnn import rnn_next_state
+from . import mcts
 import numpy as np
 
 SEED = 1
@@ -50,8 +50,11 @@ class ModelMCTS(Model):
 		c = random_linear_sample(0, 1)
 		actions = dp(a, b, c)
 		self.mct.actions = actions
+		action, self.mct = mcts.mcts(z, self.env, actions, old_tree=self.mct, tree_depth=6, simulate_depth=200)
 
-		h = rnn_output(self.state, z, EXP_MODE)
+		self.state = rnn_next_state(self.rnn, z, action, self.state)
+
+		return action
 
 
 def simulate(mct: 'mcts.Tree'):
